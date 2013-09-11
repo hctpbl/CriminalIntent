@@ -1,7 +1,10 @@
 package com.bignerdranch.android.criminalintent;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,8 +18,12 @@ import org.json.JSONException;
 import org.json.JSONTokener;
 
 import android.content.Context;
+import android.os.Environment;
+import android.util.Log;
 
 public class CriminalIntentJSONSerializer {
+	
+	private static final String TAG = "CriminalIntentJSONSerializer";
 
 	private Context mContext;
 	private String mFilename;
@@ -30,8 +37,17 @@ public class CriminalIntentJSONSerializer {
 		ArrayList<Crime> crimes = new ArrayList<Crime>();
 		BufferedReader reader = null;
 		try {
-			// Open and read the file into a Stringbuilder
-			InputStream in = mContext.openFileInput(mFilename);
+			InputStream in = null;
+			// Open and read the file into a StringBuilder
+			if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+				File file = new File(mContext.getExternalFilesDir(null), mFilename);
+				in = new FileInputStream(file);
+				Log.d(TAG, mContext.getExternalFilesDir(null).getAbsolutePath());
+				Log.i(TAG, "Reading from SD card");
+			} else {
+				in = mContext.openFileInput(mFilename);
+				Log.i(TAG, "Reading from internal storage");
+			}
 			reader = new BufferedReader(new InputStreamReader(in));
 			StringBuilder jsonString = new StringBuilder();
 			String line = null;
@@ -56,7 +72,7 @@ public class CriminalIntentJSONSerializer {
 	
 	public void saveCrimes(ArrayList<Crime> crimes) 
 			throws JSONException, IOException {
-		
+
 		// Build an array in JSON
 		JSONArray array = new JSONArray();
 		for (Crime c : crimes)
@@ -65,7 +81,15 @@ public class CriminalIntentJSONSerializer {
 		//Write the file to disk
 		Writer writer = null;
 		try {
-			OutputStream out = mContext.openFileOutput(mFilename, Context.MODE_PRIVATE);
+			OutputStream out = null;
+			if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+				File file = new File(mContext.getExternalFilesDir(null), mFilename);
+				Log.i(TAG, "Writing to SD card");
+				out = new FileOutputStream(file);
+			} else {
+				out = mContext.openFileOutput(mFilename, Context.MODE_PRIVATE);
+				Log.i(TAG, "Writing to internal storage");
+			}
 			writer = new OutputStreamWriter(out);
 			writer.write(array.toString());
 		} finally {
