@@ -8,15 +8,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -25,7 +21,12 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 
-public class CrimeFragment extends Fragment {
+import com.actionbarsherlock.app.SherlockFragment;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+
+public class CrimeFragment extends SherlockFragment {
 	
 	public static final String EXTRA_CRIME_ID = 
 			"com.bignerdranch.android.criminalintent.crime_id";
@@ -60,17 +61,12 @@ public class CrimeFragment extends Fragment {
 		mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
 	}
 
-	@TargetApi(11)
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup parent, 
 			Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.fragment_crime, parent, false);
 		
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			if (NavUtils.getParentActivityName(getActivity()) != null) {
-				getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
-			}
-		}
+		getSherlockActivity().getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		
 		mTitleField = (EditText)v.findViewById(R.id.crime_title);
 		mTitleField.setText(mCrime.getTitle());

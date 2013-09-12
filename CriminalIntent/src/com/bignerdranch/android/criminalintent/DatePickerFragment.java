@@ -10,12 +10,13 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.DatePicker.OnDateChangedListener;
 
-public class DatePickerFragment extends DialogFragment {
+import com.actionbarsherlock.app.SherlockDialogFragment;
+
+public class DatePickerFragment extends SherlockDialogFragment {
 	
 	public static final String EXTRA_DATE = 
 			"com.bignerdranch.android.criminalintent.date";
