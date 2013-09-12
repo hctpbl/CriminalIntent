@@ -29,6 +29,7 @@ public class CrimeLab {
 		mSerializer = new CriminalIntentJSONSerializer(appContext, FILENAME);
 		try {
 			mCrimes = mSerializer.loadCrimes();
+			Log.d(TAG, "Crimes loaded from file");
 		} catch (Exception e) {
 			mCrimes = new ArrayList<Crime>();
 			Log.e(TAG, "Error loading crimes: ", e);
@@ -37,6 +38,10 @@ public class CrimeLab {
 	
 	public void addCrime(Crime c) {
 		mCrimes.add(c);
+	}
+	
+	public void deleteCrime(Crime c) {
+		mCrimes.remove(c);
 	}
 	
 	public static CrimeLab get(Context c) {

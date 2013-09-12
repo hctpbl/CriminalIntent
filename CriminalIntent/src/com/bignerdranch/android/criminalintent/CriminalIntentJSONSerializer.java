@@ -15,8 +15,11 @@ import org.json.JSONException;
 import org.json.JSONTokener;
 
 import android.content.Context;
+import android.util.Log;
 
 public class CriminalIntentJSONSerializer {
+	
+	private final static String TAG = "CriminalIntentJSONSerializer";
 
 	private Context mContext;
 	private String mFilename;
@@ -56,7 +59,7 @@ public class CriminalIntentJSONSerializer {
 	
 	public void saveCrimes(ArrayList<Crime> crimes) 
 			throws JSONException, IOException {
-		
+		Log.d(TAG,"Trying to save crimes...");
 		// Build an array in JSON
 		JSONArray array = new JSONArray();
 		for (Crime c : crimes)
@@ -68,6 +71,7 @@ public class CriminalIntentJSONSerializer {
 			OutputStream out = mContext.openFileOutput(mFilename, Context.MODE_PRIVATE);
 			writer = new OutputStreamWriter(out);
 			writer.write(array.toString());
+			Log.d(TAG,"Crimes written");
 		} finally {
 			if (writer != null)
 				writer.close();
