@@ -72,7 +72,7 @@ public class CrimeCameraFragment extends Fragment {
 			@Override
 			public void surfaceChanged(SurfaceHolder holder, int format, int width,
 					int height) {
-				if (mCamera != null) return;
+				if (mCamera == null) return;
 				
 				//The surface has changed size; update the camera preview size
 				Camera.Parameters parameters = mCamera.getParameters();
