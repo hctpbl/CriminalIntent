@@ -10,12 +10,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
@@ -33,6 +35,8 @@ public class CrimeCameraFragment extends Fragment {
 	private Camera mCamera;
 	private SurfaceView mSurfaceView;
 	private View mProgressContainer;
+	
+	OrientationEventListener mOrientationEventListener;
 	
 	private Camera.ShutterCallback mShutterCallback = new Camera.ShutterCallback() {
 		
@@ -80,6 +84,7 @@ public class CrimeCameraFragment extends Fragment {
 	};
 	
 	@Override
+	@TargetApi(9)
 	@SuppressWarnings("deprecation")
 	public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.fragment_crime_camera, parent, false);
@@ -155,10 +160,45 @@ public class CrimeCameraFragment extends Fragment {
 	
 	@TargetApi(9)
 	@Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+       super.onActivityCreated(savedInstanceState);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+			mOrientationEventListener = new OrientationEventListener(getActivity()) {
+				
+				@Override
+				public void onOrientationChanged(int orientation) {
+				     if (orientation == ORIENTATION_UNKNOWN) return;
+				     android.hardware.Camera.CameraInfo info =
+				            new android.hardware.Camera.CameraInfo();
+				     android.hardware.Camera.getCameraInfo(0, info);
+				     orientation = (orientation + 45) / 90 * 90;
+				     int rotation = 0;
+				     if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
+				         rotation = (info.orientation - orientation + 360) % 360;
+				     } else {  // back-facing camera
+				         rotation = (info.orientation + orientation) % 360;
+				     }
+				     Camera.Parameters parameters = mCamera.getParameters();
+				     parameters.setRotation(rotation);
+				     mCamera.setParameters(parameters);
+				     Log.d(TAG, "Orientation changed: " + orientation);
+				     Log.d(TAG, "rotation changed: " + rotation);
+				}
+			};
+		}
+	}
+	
+	@TargetApi(9)
+	@Override
 	public void onResume() {
 		super.onResume();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
 			mCamera = Camera.open(0);
+			
+			if (mOrientationEventListener.canDetectOrientation())
+				mOrientationEventListener.enable();
+			
 		} else {
 			mCamera = Camera.open();
 		}
@@ -167,6 +207,11 @@ public class CrimeCameraFragment extends Fragment {
 	@Override
 	public void onPause() {
 		super.onPause();
+		
+		if (mOrientationEventListener != null) {
+			mOrientationEventListener.disable();
+			mOrientationEventListener = null;
+		}
 		
 		if (mCamera != null) {
 			mCamera.release();
