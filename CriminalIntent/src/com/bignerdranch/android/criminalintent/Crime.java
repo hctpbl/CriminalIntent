@@ -14,6 +14,7 @@ public class Crime {
 	private static final String JSON_DATE = "date";
 	private static final String JSON_PHOTO = "photo";
 	private static final String JSON_SUSPECT = "suspect";
+	private static final String JSON_NUMBER = "number";
 	
 	private UUID mId;
 	private String mTitle;
@@ -21,6 +22,7 @@ public class Crime {
 	private boolean mSolved;
 	private Photo mPhoto;
 	private String mSuspect;
+	private String mPhoneNumber;
 	
 	public Crime() {
 		// Generate unique identifier
@@ -35,8 +37,8 @@ public class Crime {
 		mDate = new Date(json.getLong(JSON_DATE));
 		if (json.has(JSON_PHOTO))
 			mPhoto = new Photo(json.getJSONObject(JSON_PHOTO));
-		if (json.has(JSON_SUSPECT))
-			mSuspect = json.getString(JSON_SUSPECT);
+		mSuspect = json.getString(JSON_SUSPECT);
+		mPhoneNumber = json.getString(JSON_NUMBER);
 	}
 
 	public Date getDate() {
@@ -83,6 +85,14 @@ public class Crime {
 		mSuspect = suspect;
 	}
 	
+	public String getPhoneNumber() {
+		return mPhoneNumber;
+	}
+	
+	public void setPhoneNumber(String phoneNumber) {
+		mPhoneNumber = phoneNumber;
+	}
+	
 	public JSONObject toJSON() throws JSONException {
 		JSONObject json = new JSONObject();
 		json.put(JSON_ID, mId.toString());
@@ -93,6 +103,8 @@ public class Crime {
 			json.put(JSON_PHOTO, mPhoto.toJSON());
 		if (mSuspect != null)
 			json.put(JSON_SUSPECT, mSuspect);
+		if (mPhoneNumber != null)
+			json.put(JSON_NUMBER, mPhoneNumber);
 		return json;
 	}
 	

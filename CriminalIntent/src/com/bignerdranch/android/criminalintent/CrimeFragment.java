@@ -19,6 +19,7 @@ import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -51,6 +52,7 @@ public class CrimeFragment extends Fragment {
 	private ImageButton mPhotoButton;
 	private ImageView mPhotoView;
 	private Button mSuspectButton;
+	private Button mPhoneNumberButton;
 	
 	public static CrimeFragment newInstance(UUID crimeId) {
 		Bundle args = new Bundle();
@@ -186,6 +188,21 @@ public class CrimeFragment extends Fragment {
 			mSuspectButton.setText(mCrime.getSuspect());
 		}
 		
+		mPhoneNumberButton = (Button)v.findViewById(R.id.crime_phoneNumberButton);
+		if (mCrime.getPhoneNumber() == null) {
+			mPhoneNumberButton.setEnabled(false);
+		} else {
+			mPhoneNumberButton.setEnabled(true);
+		}
+		mPhoneNumberButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + mCrime.getPhoneNumber()));
+				startActivity(i);
+			}
+		});
+		
 		// If camera is not available, disable camera functionality
 		PackageManager pm = getActivity().getPackageManager();
 		if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) && 
@@ -218,7 +235,9 @@ public class CrimeFragment extends Fragment {
 			// Specify which fields you want your query to return
 			// values for.
 			String[] queryFields = new String[] {
-				ContactsContract.Contacts.DISPLAY_NAME
+				ContactsContract.Contacts.DISPLAY_NAME,
+				ContactsContract.Contacts._ID,
+				ContactsContract.Contacts.HAS_PHONE_NUMBER
 			};
 			// Perform your query - the contactUri is like a "where"
 			// clause here
@@ -233,9 +252,25 @@ public class CrimeFragment extends Fragment {
 			// Pull out the first column of the first row of data -
 			// that is your suspect's name.
 			c.moveToFirst();
-			String suspect = c.getString(0);
+			String suspect = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+			int id = c.getInt(c.getColumnIndex(ContactsContract.Contacts._ID));
+			int has_number = c.getInt(c.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER));
 			mCrime.setSuspect(suspect);
 			mSuspectButton.setText(suspect);
+			
+			if (has_number > 0) {
+			        Cursor pCur = getActivity().getContentResolver().query(
+			        		ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+			        		new String[] {ContactsContract.CommonDataKinds.Phone.NUMBER}, 
+			        		ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?",
+			        		new String[] {String.valueOf(id)}, null);
+			        pCur.moveToFirst();
+			        String number = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+			        mCrime.setPhoneNumber(number);
+			        mPhoneNumberButton.setEnabled(true);
+			        pCur.close();
+			    }
+			
 			c.close();
 		}
 		
