@@ -1,5 +1,6 @@
 package com.bignerdranch.android.criminalintent;
 
+import java.io.File;
 import java.util.Date;
 import java.util.UUID;
 
@@ -16,7 +17,12 @@ import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ActionMode;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +52,10 @@ public class CrimeFragment extends Fragment {
 	private CheckBox mSolvedCheckBox;
 	private ImageButton mPhotoButton;
 	private ImageView mPhotoView;
+	
+
+	private ActionMode.Callback mActionModeCallback;
+	private ActionMode mActionMode;
 	
 	public static CrimeFragment newInstance(UUID crimeId) {
 		Bundle args = new Bundle();
@@ -153,6 +163,57 @@ public class CrimeFragment extends Fragment {
 			}
 		});
 		
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+			// If api < 11, we use a context menu
+			registerForContextMenu(mPhotoView);
+		} else {
+			// If api > 11, we use a context action bar 
+			mActionModeCallback = new ActionMode.Callback() {
+				
+				@Override
+				public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+					return false;
+				}
+				
+				@Override
+				public void onDestroyActionMode(ActionMode mode) {
+					mActionMode = null;
+				}
+				
+				@Override
+				public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+					MenuInflater inflater = mode.getMenuInflater();
+					inflater.inflate(R.menu.crime_list_item_context, menu);
+					return true;
+				}
+				
+				@Override
+				public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+					switch (item.getItemId()) {
+						case R.id.menu_item_delete_crime:
+							deletePhoto();
+							mode.finish();
+							return true;
+						default:
+							return false;
+					}
+				}
+			};
+			mPhotoView.setOnLongClickListener(new View.OnLongClickListener() {
+				
+				@Override
+				public boolean onLongClick(View v) {
+					if (mActionMode != null) {
+						return false;
+					}
+					
+					mActionMode = getActivity().startActionMode(mActionModeCallback);
+					mPhotoView.setSelected(true);
+					return true;
+				}
+			});
+		}
+		
 		// If camera is not available, disable camra functionality
 		PackageManager pm = getActivity().getPackageManager();
 		if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) && 
@@ -175,6 +236,13 @@ public class CrimeFragment extends Fragment {
 			String filename = data
 					.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
 			if (filename != null) {
+				Photo oldPhoto = mCrime.getPhoto();
+				if (oldPhoto != null) {
+					String path = getActivity().getFileStreamPath(oldPhoto.getFilename()).getAbsolutePath();
+					Log.d(TAG, "Old photo file deleted: " + path);
+					File f = new File(path);
+					f.delete();
+				}
 				Photo p = new Photo(filename);
 				mCrime.setPhoto(p);
 				showPhoto();
@@ -224,5 +292,32 @@ public class CrimeFragment extends Fragment {
 	public void onStop()  {
 		super.onStop();
 		PictureUtils.cleanImageView(mPhotoView);
+	}
+	
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		getActivity().getMenuInflater().inflate(R.menu.crime_list_item_context, menu);
+	}
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.menu_item_delete_crime:
+				deletePhoto();
+				return true;
+		}
+		return super.onContextItemSelected(item);
+	}
+	
+	private void deletePhoto() {
+		Photo p = mCrime.getPhoto();
+		if (p != null) {
+			String path = getActivity()
+				.getFileStreamPath(mCrime.getPhoto().getFilename()).getAbsolutePath();
+			File f = new File(path);
+			f.delete();
+			mCrime.setPhoto(null);
+			mPhotoView.setImageDrawable(null);
+		}
 	}
 }
